@@ -1,16 +1,41 @@
-# This is a sample Python script.
+# Файл main.py
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+from models import DeviceModelFactory
+from training import Trainer
+from exchange import DataExchangeQueue, DataExchangeHandler
+from config import load_config
 
+def main():
+    # Завантаження конфігурації
+    config = load_config()
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+    # Ініціалізація фабрики моделей
+    model_factory = DeviceModelFactory()
 
+    # Ініціалізація тренера
+    trainer = Trainer()
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+    # Ініціалізація черги для обміну даними
+    data_exchange_queue = DataExchangeQueue()
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    # Ініціалізація обробника обміну даними
+    data_exchange_handler = DataExchangeHandler()
+
+    # Запуск основної логіки програми
+    while True:
+        # Отримання даних від портативних пристроїв
+        data = data_exchange_queue.get_data()
+
+        # Обробка отриманих даних
+        processed_data = data_exchange_handler.process_data(data)
+
+        # Навчання моделей на основному сервері
+        trainer.train_models(processed_data)
+
+        # Оновлення ваг моделей на портативних пристроях
+        for device_id, model in processed_data.items():
+            device = model_factory.get_device_model(device_id)
+            device.update_model_weights(model)
+
+if __name__ == "__main__":
+    main()
